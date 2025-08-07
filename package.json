@@ -1,0 +1,63 @@
+{
+  "name": "@halix/customelement-sdk",
+  "version": "1.0.0",
+  "description": "Halix Platform custom element SDK",
+  "main": "./lib/cjs/index.js",
+  "module": "./lib/esm/index.mjs",
+  "types": "./lib/types/index.d.ts",
+  "files": [
+    "lib/**/*"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "rm -rf ./lib",
+    "build": "npm run clean && npm run build:types && npm run build:esm && npm run build:cjs",
+    "build:types": "tsc -p ./tsconfig.build.json",
+    "build:esm": "npx babel src --out-dir lib/esm --extensions \".ts\"",
+    "build:cjs": "npx babel src --out-dir lib/cjs --extensions \".ts\" --plugins \"@babel/plugin-transform-modules-commonjs\"",
+    "prepack": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mmastrangelo/halixcustomelement.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mmastrangelo/halixcustomelement/issues"
+  },
+  "homepage": "https://github.com/mmastrangelo/halixcustomelement#readme",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./lib/esm/types/index.d.ts",
+        "default": "./lib/esm/index.mjs"
+      },
+      "require": {
+        "types": "./lib/cjs/types/index.d.ts",
+        "default": "./lib/cjs/index.js"
+      }
+    }
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.28.0",
+    "@babel/core": "^7.28.0",
+    "@babel/plugin-proposal-class-properties": "^7.18.6",
+    "@babel/plugin-proposal-decorators": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "@babel/preset-typescript": "^7.27.1",
+    "@types/node": "^20.17.25",
+    "eslint": "^8.57.1",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@halix/action-sdk": "^1.0.15",
+    "axios": "^1.2.2",
+    "lit": "^3.3.1",
+    "moment": "^2.29.4",
+    "rxjs": "^7.5.5"
+  }
+}

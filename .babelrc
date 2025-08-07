@@ -1,0 +1,14 @@
+{
+    "parserOpts": {
+        "plugins": ["decorators-legacy", "classProperties"],
+    },
+    "plugins": [
+        ["@babel/plugin-proposal-decorators", { "legacy": true }],
+        ["@babel/plugin-proposal-class-properties", { "loose": true }],
+    ],
+    "presets": [
+        ["@babel/preset-typescript"],
+        ["@babel/preset-env", { "targets": "defaults", "modules": false }],
+    ],
+    "sourceMaps": true
+}

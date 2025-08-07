@@ -1,0 +1,35 @@
+{
+    "compilerOptions": {
+      /* Output Options */
+      "emitDeclarationOnly": true,
+      "declaration": true,
+      "declarationDir": "lib/types",
+      "outDir": "lib/types",
+  
+      /* Module System */
+      "target": "ES2022",
+      "module": "ESNext",
+      "moduleResolution": "Bundler",
+      "moduleDetection": "force",  // treat all files as modules
+  
+      /* JS Interop & Decorators */
+      "experimentalDecorators": false,         // ❌ DO NOT enable (Babel handles decorators)
+      "useDefineForClassFields": true,         // aligns with Babel + 2023 decorators
+      "isolatedModules": true,                 // avoids errors with decorator metadata
+  
+      /* Type Safety */
+      "strict": true,
+      "skipLibCheck": true,
+  
+      /* JSX (in case you use it) */
+      "jsx": "preserve",
+  
+      /* Misc */
+      "allowJs": false,
+      "checkJs": false,
+      "noEmit": false,
+      "noEmitHelpers": true
+    },
+    "include": ["src/**/*"]
+  }
+  
