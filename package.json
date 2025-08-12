@@ -1,6 +1,6 @@
 {
   "name": "@halix/customelement-sdk",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "Halix Platform custom element SDK",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.mjs",
@@ -54,7 +54,7 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@halix/action-sdk": "1.0.18",
+    "@halix/action-sdk": "1.0.19",
     "axios": "^1.2.2",
     "lit": "^3.3.1",
     "moment": "^2.29.4",

@@ -85,13 +85,53 @@ export function initializeContext(context: CustomElementContext) {
     });
 }
 
+// CSS Library Loading & Caching
+
+const supportsAdopted = 'adoptedStyleSheets' in Document.prototype && 'replace' in CSSStyleSheet.prototype;
+
+const sheetCache = new Map<string, CSSStyleSheet>();   // for constructable sheets
+const cssTextCache = new Map<string, string>();        // for fallback text & quick reuse
+const inflight = new Map<string, Promise<string>>();   // share concurrent fetches
+
+async function fetchCss(url: string): Promise<string> {
+    // de-dupe concurrent fetches of same URL
+    if (inflight.has(url)) {
+        return inflight.get(url)!;
+    }
+    
+    const p = (async () => {
+        if (cssTextCache.has(url)) {
+            return cssTextCache.get(url)!;
+        }
+        const res = await fetch(url, { credentials: 'omit', mode: 'cors' });
+        if (!res.ok) {
+            throw new Error(`Failed to load CSS ${url}: ${res.status} ${res.statusText}`);
+        }
+        const text = await res.text();
+        cssTextCache.set(url, text);
+        return text;
+    })();
+    
+    inflight.set(url, p);
+    try {
+        return await p;
+    } finally {
+        inflight.delete(url);
+    }
+}
+
+
 /**
- * HalixLitElement is a base class for all Halix custom elements. It provides a context property that can be used to access the Halix SDK. 
- * It provides the onContextAvailable hook for subclasses to use when the element receives context from the outer Halix environment.
- */
+* HalixLitElement is a base class for all Halix custom elements. It provides a context property that can be used to access the Halix SDK. 
+* It provides the onContextAvailable hook for subclasses to use when the element receives context from the outer Halix environment.
+*/
 export abstract class HalixLitElement extends LitElement {
+
     private _context!: CustomElementContext;
     
+      // Tracks which external URLs this instance has already adopted/injected
+    private _appliedCssUrls = new Set<string>();
+
     // @ts-ignore
     @property({ type: Object })
     get context(): CustomElementContext {
@@ -114,4 +154,51 @@ export abstract class HalixLitElement extends LitElement {
     * This hook is called once when the context is available upon initialization of the element.
     */
     protected abstract onContextAvailable(context: CustomElementContext): void;
+    
+    protected async addStylesheet(url: string): Promise<void> {
+        if (this._appliedCssUrls.has(url)) return; // no-ops on repeat
+        this._appliedCssUrls.add(url);
+        
+        try {
+            const cssText = await fetchCss(url);
+            
+            if (supportsAdopted) {
+                // share sheet across all instances for perf/memory
+                let sheet = sheetCache.get(url);
+                if (!sheet) {
+                    sheet = new CSSStyleSheet();
+                    await sheet.replace(cssText);
+                    sheetCache.set(url, sheet);
+                }
+                // append without clobbering existing styles
+                const root = this.renderRoot as ShadowRoot & { adoptedStyleSheets: CSSStyleSheet[] };
+                root.adoptedStyleSheets = [
+                    ...root.adoptedStyleSheets,
+                    sheet
+                ];
+            } else {
+                // Fallback: inject <style> into this shadow root
+                const style = document.createElement('style');
+
+                // Nonce handling for CSP compliance. Not yet implemented.
+                // const nonce = getCspNonce();
+                // if (nonce) style.setAttribute('nonce', nonce);
+
+                style.textContent = cssText;
+                this.renderRoot.appendChild(style);
+            }
+        } catch (err) {
+            console.error(`[HalixLitElement] Failed to add stylesheet ${url}:`, err);
+            throw err;
+        }
+    }
+    
+    protected async addStylesheets(urls: string[]): Promise<void> {
+        // Run serially to preserve order; switch to Promise.all for parallel if you don’t care
+        for (const url of urls) {
+            // Ignore obvious empties/mistakes
+            if (!url || typeof url !== 'string') continue;
+            await this.addStylesheet(url);
+        }
+    }
 }
