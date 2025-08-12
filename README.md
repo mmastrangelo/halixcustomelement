@@ -64,6 +64,10 @@ The `CustomElementContext` interface provides access to the Halix platform state
 
 - **`pageContext`**: Current page context variables and their values
 - **`pageContext$`**: Observable stream of page context changes
+- **`groupObject`**: Group object information, if one is in scope
+  - `groupObject`: The group object itself
+  - `parent`: Parent object information, if one is in scope
+  - `groupChange`: Observable stream that fires when the group object changes
 - **`session`**: User session information including:
   - `user`: Current user details (name, email, etc.)
   - `sandbox`: Current sandbox/solution environment
