@@ -55,6 +55,9 @@ export interface CustomElementContext {
     };
     serviceAddress: string;
     authTokenRetriever: () => Observable<string>;
+    pageData: any;
+    updateVariable: (variable: string, value: any) => void;
+    updatePageData: (pageData: any) => void;
 }
 
 /**
