@@ -1,8 +1,26 @@
-import { Observable, BehaviorSubject } from "rxjs";
+import { Observable } from "rxjs";
 import * as hx from "@halix/action-sdk";
 
 import { LitElement } from 'lit';
 import { property } from 'lit/decorators.js';
+
+/**
+ * ComponentContainer represents a component within the navigation structure.
+ */
+export interface ComponentContainer {
+    id: string;
+    name: string;
+    containers?: ComponentContainer[];
+    componentType: string;
+    componentConfig?: any;
+    parent?: ComponentContainer;
+    
+    /**
+     * Returns the fully qualified ID of this component - which is the ID of this component preceded by the IDs of
+     * all its ancestors, dot delimited (i.e., root.child.grandchild).
+     */
+    getFullyQualifiedId(): string;
+}
 
 /**
 * CustomElementContext is an interface defining the properties of the custom element context, which represents
@@ -12,11 +30,7 @@ import { property } from 'lit/decorators.js';
 export interface CustomElementContext {
     pageContext: { [key: string]: any };
     pageContext$: Observable<{ [key: string]: any }>;
-    groupObject: {
-        groupObject: any;
-        parent?: any;
-        groupChange: BehaviorSubject<number>;
-    };
+    groupObject: any;
     session: {
         solution: {
             objKey: string;
@@ -40,6 +54,14 @@ export interface CustomElementContext {
             thumbnail: string;
             getFormattedName(): string;
         },
+        currentNav: {
+            id: string;
+            name: string;
+            rootContainers?: ComponentContainer[];
+            personalContainers?: ComponentContainer[];
+            landingContainer?: ComponentContainer;
+            homeContainer?: ComponentContainer;
+        };
         currentComponent: {
             id: string;
             name: string;
@@ -54,10 +76,12 @@ export interface CustomElementContext {
         isLoggedIn(): boolean;
     };
     serviceAddress: string;
+    navigate: (componentId: string, queryParams?: { [key: string]: string }) => Observable<any>;
     authTokenRetriever: () => Observable<string>;
     pageData: any;
     updateVariable: (variable: string, value: any) => void;
     updatePageData: (pageData: any) => void;
+    
 }
 
 /**
