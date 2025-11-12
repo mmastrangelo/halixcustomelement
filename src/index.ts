@@ -1,8 +1,14 @@
 import { Observable } from "rxjs";
-import * as hx from "@halix/action-sdk";
 
 import { LitElement } from 'lit';
 import { property } from 'lit/decorators.js';
+
+// Minimal interface - only requires the initialize method that the superclass actually uses
+export interface ActionSdkType {
+    initialize: (config: any) => void;
+    // Everything else is typed as any for maximum flexibility and maintainability
+    [key: string]: any;
+}
 
 /**
  * ComponentContainer represents a component within the navigation structure.
@@ -14,12 +20,133 @@ export interface ComponentContainer {
     componentType: string;
     componentConfig?: any;
     parent?: ComponentContainer;
-    
+
     /**
      * Returns the fully qualified ID of this component - which is the ID of this component preceded by the IDs of
      * all its ancestors, dot delimited (i.e., root.child.grandchild).
      */
     getFullyQualifiedId(): string;
+}
+
+/**
+ * DataElement represents a metadata definition for a business entity or data structure within the Halix platform.
+ * It defines the schema and configuration for data that can be stored, queried, and manipulated.
+ * 
+ * @example
+ * ```typescript
+ * const customerElement: DataElement = {
+ *   id: "customer",
+ *   name: "Customer",
+ *   shortName: "Cust",
+ *   description: "Customer master data",
+ *   labelAttributeIDs: ["firstName", "lastName"],
+ *   dataAttributes: [...]
+ * };
+ * ```
+ */
+export interface DataElement {
+    id: string;
+    name: string;
+    shortName?: string;
+    description: string;
+    labelAttributeIDs: string[];
+    dataAttributes: DataAttribute[];
+    organizationProxy?: boolean;
+    userProxy?: boolean;
+}
+
+/**
+ * DataAttribute represents a single field or property within a DataElement.
+ * It defines the type, constraints, and behavior of a specific piece of data.
+ * 
+ * @example
+ * ```typescript
+ * const emailAttribute: DataAttribute = {
+ *   id: "email",
+ *   name: "Email Address",
+ *   attributeType: "primitive",
+ *   dataType: "string",
+ *   length: 255,
+ *   required: true
+ * };
+ * ```
+ */
+export interface DataAttribute {
+    id: string;
+    name: string;
+    shortName?: string;
+    attributeType: string;
+    dataType: string;
+    formatType?: string;
+    length: number;
+    rows?: number;
+    height?: number;
+    decimals?: number;
+    codeSetKey?: string;
+    dataAttributes?: Array<DataAttribute>;
+    required?: boolean;
+    default?: string;
+    relatedElementId?: string;
+    builtInCodes?: AttributeCode[];
+    sequenceNumber?: number;
+}
+
+/**
+ * AttributeCode represents a single valid code option for a coded DataAttribute.
+ * Coded attributes restrict values to a predefined set of options, similar to an enum.
+ * 
+ * @example
+ * ```typescript
+ * const statusCode: AttributeCode = {
+ *   sequence: 1,
+ *   code: "ACTIVE",
+ *   description: "Active Customer",
+ *   value: "A"
+ * };
+ * ```
+ */
+export interface AttributeCode {
+    sequence?: number;
+    code: string;
+    description?: string;
+    value?: any;
+}
+/**
+ * MetadataLookup provides methods for retrieving metadata definitions at runtime.
+ * This interface is available through the CustomElementContext and allows custom elements
+ * to dynamically query the metadata configuration of data elements and their attributes.
+ * 
+ * @example
+ * ```typescript
+ * // In a custom element
+ * const customerElement = this.context.metadataLookup.lookupDataElement("customer");
+ * const emailAttr = this.context.metadataLookup.lookupDataAttribute("customer", "email");
+ * const statusCodes = this.context.metadataLookup.lookupCodesForAttribute("customer", "status");
+ * ```
+ */
+export interface MetadataLookup {
+    /**
+     * Retrieves the complete DataElement definition for a given element ID.
+     * @param dataElementId - The unique identifier of the data element to look up
+     * @returns The DataElement definition
+     */
+    lookupDataElement(dataElementId: string): DataElement;
+    
+    /**
+     * Retrieves a specific DataAttribute definition from a DataElement.
+     * @param dataElementId - The unique identifier of the parent data element
+     * @param attributeId - The unique identifier of the attribute within the element
+     * @returns The DataAttribute definition
+     */
+    lookupDataAttribute(dataElementId: string, attributeId: string): DataAttribute;
+    
+    /**
+     * Retrieves the valid code options for a coded attribute.
+     * @param dataElementId - The unique identifier of the parent data element
+     * @param attributeId - The unique identifier of the coded attribute
+     * @returns Array of code options with sequence, code, and description
+     */
+    lookupCodesForAttribute(dataElementId: string, attributeId: string): Observable<AttributeCode[]>;
 }
 
 /**
@@ -81,19 +208,19 @@ export interface CustomElementContext {
     pageData: any;
     updateVariable: (variable: string, value: any) => void;
     updatePageData: (pageData: any) => void;
-    
+    metadataLookup: MetadataLookup;
 }
 
 /**
 * initializeFromCustomElement initializes the SDK from a custom element context. This should be called
 * at the beginning of the action handler to set up the SDK with incoming information, including context
 * information, input parameters, and authentication information needed to make API requests to the Halix service.
-* 
+*
 * @param context - The custom element context
+* @param actionSdk - The action SDK instance to initialize
 */
-export function initializeContext(context: CustomElementContext) {
-    
-    hx.initialize({
+export function initializeContext(context: CustomElementContext, actionSdk: ActionSdkType) {
+    actionSdk.initialize({
         body: {
             authTokenRetriever: context.authTokenRetriever,
             sandboxKey: context.session?.sandbox?.objKey,
@@ -113,9 +240,7 @@ export function initializeContext(context: CustomElementContext) {
 }
 
 // CSS Library Loading & Caching
-
 const supportsAdopted = 'adoptedStyleSheets' in Document.prototype && 'replace' in CSSStyleSheet.prototype;
-
 const sheetCache = new Map<string, CSSStyleSheet>();   // for constructable sheets
 const cssTextCache = new Map<string, string>();        // for fallback text & quick reuse
 const inflight = new Map<string, Promise<string>>();   // share concurrent fetches
@@ -125,7 +250,7 @@ async function fetchCss(url: string): Promise<string> {
     if (inflight.has(url)) {
         return inflight.get(url)!;
     }
-    
+
     const p = (async () => {
         if (cssTextCache.has(url)) {
             return cssTextCache.get(url)!;
@@ -138,7 +263,7 @@ async function fetchCss(url: string): Promise<string> {
         cssTextCache.set(url, text);
         return text;
     })();
-    
+
     inflight.set(url, p);
     try {
         return await p;
@@ -147,16 +272,17 @@ async function fetchCss(url: string): Promise<string> {
     }
 }
 
-
 /**
-* HalixLitElement is a base class for all Halix custom elements. It provides a context property that can be used to access the Halix SDK. 
+* HalixLitElement is a base class for all Halix custom elements. It provides a context property that can be used to access the Halix SDK.
 * It provides the onContextAvailable hook for subclasses to use when the element receives context from the outer Halix environment.
 */
 export abstract class HalixLitElement extends LitElement {
+    // Action SDK instance injected by subclasses - allows version independence
+    protected hx!: ActionSdkType;
 
     private _context!: CustomElementContext;
-    
-      // Tracks which external URLs this instance has already adopted/injected
+
+    // Tracks which external URLs this instance has already adopted/injected
     private _appliedCssUrls = new Set<string>();
 
     // @ts-ignore
@@ -164,31 +290,42 @@ export abstract class HalixLitElement extends LitElement {
     get context(): CustomElementContext {
         return this._context;
     }
-    
+
     set context(val: CustomElementContext) {
         const oldVal = this._context;
         this._context = val;
-        
+
         if (val?.session?.organizationProxyKey) {
-            initializeContext(val);
+            // Subclasses must now call initializeContext with their own SDK instance
+            // This will be handled by subclasses in their onContextAvailable override
             this.onContextAvailable(val);
             this.requestUpdate('context', oldVal); // optional: notify Lit of change
-        }
+        }   
     }
-    
+
     /**
     * Subclasses can use this hook for any initialization that needs to happen when the context is available.
     * This hook is called once when the context is available upon initialization of the element.
+    * Subclasses should call initializeContext(context, theirSdkInstance) in this method.
     */
     protected abstract onContextAvailable(context: CustomElementContext): void;
-    
+
+    /**
+    * Initialize the Halix context and action SDK with a specific SDK instance.
+    * Subclasses must call this in their onContextAvailable implementation.
+    */
+    protected initializeContext(context: CustomElementContext, actionSdk: ActionSdkType) {
+        this.hx = actionSdk;
+        initializeContext(context, actionSdk);
+    }
+
     protected async addStylesheet(url: string): Promise<void> {
         if (this._appliedCssUrls.has(url)) return; // no-ops on repeat
         this._appliedCssUrls.add(url);
-        
+
         try {
             const cssText = await fetchCss(url);
-            
+
             if (supportsAdopted) {
                 // share sheet across all instances for perf/memory
                 let sheet = sheetCache.get(url);
@@ -206,11 +343,9 @@ export abstract class HalixLitElement extends LitElement {
             } else {
                 // Fallback: inject <style> into this shadow root
                 const style = document.createElement('style');
-
                 // Nonce handling for CSP compliance. Not yet implemented.
                 // const nonce = getCspNonce();
                 // if (nonce) style.setAttribute('nonce', nonce);
-
                 style.textContent = cssText;
                 this.renderRoot.appendChild(style);
             }
@@ -219,9 +354,9 @@ export abstract class HalixLitElement extends LitElement {
             throw err;
         }
     }
-    
+
     protected async addStylesheets(urls: string[]): Promise<void> {
-        // Run serially to preserve order; switch to Promise.all for parallel if you don’t care
+        // Run serially to preserve order; switch to Promise.all for parallel if you don't care
         for (const url of urls) {
             // Ignore obvious empties/mistakes
             if (!url || typeof url !== 'string') continue;
