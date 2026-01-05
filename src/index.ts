@@ -206,6 +206,7 @@ export interface CustomElementContext {
     navigate: (componentId: string, queryParams?: { [key: string]: string }) => Observable<any>;
     authTokenRetriever: () => Observable<string>;
     pageData: any;
+    pageData$: Observable<any>;
     updateVariable: (variable: string, value: any) => void;
     updatePageData: (pageData: any) => void;
     metadataLookup: MetadataLookup;
@@ -317,6 +318,10 @@ export abstract class HalixLitElement extends LitElement {
     protected initializeContext(context: CustomElementContext, actionSdk: ActionSdkType) {
         this.hx = actionSdk;
         initializeContext(context, actionSdk);
+    }
+
+    protected onDestroy(): void {
+        // Clean up any resources here
     }
 
     protected async addStylesheet(url: string): Promise<void> {
