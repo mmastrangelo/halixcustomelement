@@ -1,6 +1,6 @@
 {
   "name": "@halix/customelement-sdk",
-  "version": "1.0.30",
+  "version": "1.0.31",
   "description": "Halix Platform custom element SDK",
   "main": "./lib/cjs/index.js",
   "module": "./lib/esm/index.mjs",

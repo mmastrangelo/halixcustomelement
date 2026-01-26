@@ -203,13 +203,22 @@ export interface CustomElementContext {
         isLoggedIn(): boolean;
     };
     serviceAddress: string;
-    navigate: (componentId: string, queryParams?: { [key: string]: string }) => Observable<any>;
-    authTokenRetriever: () => Observable<string>;
     pageData: any;
     pageData$: Observable<any>;
     updateVariable: (variable: string, value: any) => void;
     updatePageData: (pageData: any) => void;
+    navigate: (componentId: string, queryParams?: { [key: string]: string }) => Observable<any>;
+    authTokenRetriever: () => Observable<string>;
     metadataLookup: MetadataLookup;
+
+    /**
+     * Retrieves the scope keys the current user has access to for a given data element and custom scope ID.
+     * The returned keys can be used as the 'parentKey' when accessing list data or performing crud operations.
+     * @param dataElementId - The data element of the scope keys to retrieve
+     * @param customScopeId - Optional; the customScopeId associated with the scope keys to retrieve    
+     * @returns An array of scope keys
+     */
+    getScopeKeys(dataElementId: string, customScopeId?: string): string[];
 }
 
 /**
