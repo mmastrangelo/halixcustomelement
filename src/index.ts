@@ -182,12 +182,20 @@ export interface CustomElementContext {
             getFormattedName(): string;
         },
         currentNav: {
+            objKey: string;
             id: string;
             name: string;
             rootContainers?: ComponentContainer[];
             personalContainers?: ComponentContainer[];
             landingContainer?: ComponentContainer;
             homeContainer?: ComponentContainer;
+            contextConfig: {
+                navLevel: "organization" | "user";
+                userProxyElementId: string;
+                orgProxyElementId: string;
+                userProxyRequired: boolean;
+                orgProxyKey?: string;
+            };
         };
         currentComponent: {
             id: string;
@@ -230,6 +238,13 @@ export interface CustomElementContext {
 * @param actionSdk - The action SDK instance to initialize
 */
 export function initializeContext(context: CustomElementContext, actionSdk: ActionSdkType) {
+    const navigationContext = context.session?.currentNav
+        ? {
+            ...context.session.currentNav.contextConfig,
+            navigationKey: context.session.currentNav.objKey,
+        }
+        : undefined;
+
     actionSdk.initialize({
         body: {
             authTokenRetriever: context.authTokenRetriever,
@@ -243,6 +258,7 @@ export function initializeContext(context: CustomElementContext, actionSdk: Acti
                 orgProxyKey: context.session?.organizationProxyKey,
                 orgKey: context.session?.organizationKey,
                 userProxyKey: context.session?.userProxy?.objKey,
+                navigationContext,
             },
             params: {},
         },
