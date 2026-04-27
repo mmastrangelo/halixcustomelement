@@ -149,14 +149,22 @@ export interface MetadataLookup {
     lookupCodesForAttribute(dataElementId: string, attributeId: string): Observable<AttributeCode[]>;
 }
 
+export interface CustomElementPageContext {
+    params: Record<string, string | undefined>;
+    load: Record<string, unknown>;
+    raw: Record<string, unknown>;
+    get(path: string): unknown;
+}
+
 /**
 * CustomElementContext is an interface defining the properties of the custom element context, which represents
 * the state of the application front-end. A CustomElementContext is provided as property bound to Lit elements
 * that back custom page elements.
 */
 export interface CustomElementContext {
-    pageContext: { [key: string]: any };
-    pageContext$: Observable<{ [key: string]: any }>;
+    readOnly: boolean;
+    pageContext: CustomElementPageContext;
+    pageContext$: Observable<CustomElementPageContext>;
     groupObject: any;
     session: {
         solution: {
@@ -215,6 +223,7 @@ export interface CustomElementContext {
     pageData$: Observable<any>;
     updateVariable: (variable: string, value: any) => void;
     updatePageData: (pageData: any) => void;
+    refreshPageData: () => Promise<void>;
     navigate: (componentId: string, queryParams?: { [key: string]: string }) => Observable<any>;
     authTokenRetriever: () => Observable<string>;
     metadataLookup: MetadataLookup;
@@ -250,7 +259,7 @@ export function initializeContext(context: CustomElementContext, actionSdk: Acti
             authTokenRetriever: context.authTokenRetriever,
             sandboxKey: context.session?.sandbox?.objKey,
             serviceAddress: context.serviceAddress,
-            actionSubject: context.pageContext,
+            actionSubject: context.pageContext.raw,
             userContext: {
                 user: context.session?.user,
                 userProxy: context.session?.userProxy,

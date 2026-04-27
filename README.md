@@ -62,8 +62,16 @@ export class MyCustomElement extends HalixLitElement {
 
 The `CustomElementContext` interface provides access to the Halix platform state:
 
-- **`pageContext`**: Current page context variables and their values
-- **`pageContext$`**: Observable stream of page context changes
+- **`pageContext`**: Typed page-context facade for custom elements
+  - `pageContext.params`: Navigation/query-backed page parameters
+  - `pageContext.load`: Values produced by page on-load behaviors
+  - `pageContext.raw`: Full raw page-context map for advanced scenarios
+  - `pageContext.get(path)`: Dynamic lookup helper for paths like `params.hallPassId` or `load.entry`
+- **`pageContext$`**: Observable stream of typed page-context changes
+- **`pageData`**: Current host page/detail data snapshot
+- **`pageData$`**: Observable stream of host page/detail data updates
+- **`updatePageData(data)`**: Update host page/detail data. Object payloads are merged into the current page data and are treated as page data edits.
+- **`refreshPageData()`**: Reload host page/detail data after the custom element has already persisted changes elsewhere.
 - **`groupObject`**: Group object information, if one is in scope
   - `groupObject`: The group object itself
   - `parent`: Parent object information, if one is in scope
@@ -155,6 +163,28 @@ export class ReactiveElement extends HalixLitElement {
   }
 }
 ```
+
+### Reading Page Parameters
+
+```js
+export class DetailElement extends HalixLitElement {
+  protected onContextAvailable(context: CustomElementContext) {
+    const hallPassId = context.pageContext.params.hallPassId;
+    const loadEntry = context.pageContext.get('load.entry');
+
+    console.log('Hall pass ID:', hallPassId);
+    console.log('Load entry:', loadEntry);
+  }
+}
+```
+
+Use `pageContext.params` for navigation/query parameters. Avoid reading navigation params through `pageContext.variables`; custom elements should use the typed page-context facade instead.
+
+### Updating vs Refreshing Page Data
+
+Use `context.updatePageData(...)` when the custom element is changing values on the host page/detail object and the host should treat those values as edits.
+
+Use `await context.refreshPageData()` after the custom element saves through the Action SDK or another persisted path and the host only needs to reload its current data. Do not synthesize an `updatePageData(...)` payload just to trigger a reload.
 
 ---
 ## 🔐 License
