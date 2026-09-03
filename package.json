@@ -1,9 +1,9 @@
 {
   "name": "@halix/customelement-sdk",
-  "version": "1.0.37",
+  "version": "1.0.39",
   "description": "Halix Platform custom element SDK",
   "main": "./lib/cjs/index.js",
-  "module": "./lib/esm/index.mjs",
+  "module": "./lib/esm/index.js",
   "types": "./lib/types/index.d.ts",
   "files": [
     "lib/**/*"
@@ -15,8 +15,10 @@
     "clean": "rm -rf ./lib",
     "build": "npm run clean && npm run build:types && npm run build:esm && npm run build:cjs",
     "build:types": "tsc -p ./tsconfig.build.json",
-    "build:esm": "npx babel src --out-dir lib/esm --extensions \".ts\"",
+    "build:esm": "npx babel src --out-dir lib/esm --extensions \".ts\" && node ./scripts/write-esm-package.mjs",
     "build:cjs": "npx babel src --out-dir lib/cjs --extensions \".ts\" --plugins \"@babel/plugin-transform-modules-commonjs\"",
+    "test": "node ./scripts/audit-credential-logging.mjs",
+    "test:package": "npm run build && node ./scripts/package-smoke.mjs",
     "prepack": "npm run build"
   },
   "repository": {
@@ -33,9 +35,9 @@
   "exports": {
     ".": {
       "types": "./lib/types/index.d.ts",
-      "import": "./lib/esm/index.mjs",
+      "import": "./lib/esm/index.js",
       "require": "./lib/cjs/index.js",
-      "default": "./lib/esm/index.mjs"
+      "default": "./lib/esm/index.js"
     }
   },
   "devDependencies": {
@@ -50,7 +52,7 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@halix/action-sdk": "1.0.50",
+    "@halix/action-sdk": "1.0.57",
     "axios": "^1.2.2",
     "lit": "^3.3.1",
     "moment": "^2.29.4",
