@@ -31,6 +31,20 @@ const cjsSdk = require(resolve(repositoryRoot, packageManifest.exports['.'].requ
 for (const sdk of [esmSdk, cjsSdk]) {
     assert.equal(typeof sdk.HalixLitElement, 'function');
     assert.equal(typeof sdk.initializeContext, 'function');
+
+    // The guest cart handle reaches the Action SDK live, including one the host creates after initialization.
+    let handle;
+    let initialized;
+    sdk.initializeContext({
+        session: { sandbox: { objKey: 'sbx~guest' }, organizationKey: 'org~guest' },
+        pageContext: { raw: {} },
+        get guestCartHandle() {
+            return handle;
+        },
+    }, { initialize: (config) => { initialized = config; } });
+    assert.equal(initialized.body.guestCartHandle, undefined);
+    handle = { cartKey: 'cart~guest', cartToken: 'token' };
+    assert.deepEqual(initialized.body.guestCartHandle, handle, 'initializeContext must pass the live guest cart handle');
 }
 
 console.log('ESM and CommonJS package entrypoints resolve with the declared Action SDK.');

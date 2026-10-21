@@ -157,11 +157,40 @@ export interface CustomElementPageContext {
 }
 
 /**
+ * CustomElementCommerceContext lists the data elements whose objects can be added to the shopping cart.
+ */
+export interface CustomElementCommerceContext {
+    /**
+     * IDs of the sandbox's payable data elements. Discovered after the element mounts and empty until then; always
+     * empty for an anonymous shopper, because discovery requires a session.
+     */
+    payableElementIds: string[];
+}
+
+/**
+ * GuestCartHandle names an anonymous shopper's guest cart on a public page. The action SDK sends its token in
+ * place of a session on cart requests.
+ */
+export interface GuestCartHandle {
+    cartKey: string;
+    cartToken: string;
+}
+
+/**
 * CustomElementContext is an interface defining the properties of the custom element context, which represents
 * the state of the application front-end. A CustomElementContext is provided as property bound to Lit elements
 * that back custom page elements.
 */
 export interface CustomElementContext {
+    /**
+     * Payable element discovery for the current session, when the host provides it.
+     */
+    commerce?: CustomElementCommerceContext;
+    /**
+     * The current anonymous shopper's guest cart, or undefined when a user is signed in or the page holds no guest
+     * cart. Read it when needed rather than once: the host can create the guest cart after the element mounts.
+     */
+    readonly guestCartHandle?: GuestCartHandle;
     readOnly: boolean;
     pageContext: CustomElementPageContext;
     pageContext$: Observable<CustomElementPageContext>;
@@ -263,6 +292,10 @@ export function initializeContext(context: CustomElementContext, actionSdk: Acti
         body: {
             authTokenRetriever: context.authTokenRetriever,
             actionRequestExecutor: context.actionRequestExecutor,
+            // A getter, so the SDK sees a guest cart the host creates after initialization.
+            get guestCartHandle() {
+                return context.guestCartHandle;
+            },
             sandboxKey: context.session?.sandbox?.objKey,
             serviceAddress: context.serviceAddress,
             actionSubject: context.pageContext.raw,

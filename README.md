@@ -82,7 +82,13 @@ The `CustomElementContext` interface provides access to the Halix platform state
   - `organizationProxy`: Organization context
   - `userProxy`: User proxy information
 - **`serviceAddress`**: Halix service endpoint
-- **`authTokenRetriever`**: Function to get authentication tokens
+- **`authTokenRetriever`**: Function to get authentication tokens. On a public page with no signed-in user it returns no token.
+- **`commerce`**: `{ payableElementIds }`, the data elements whose objects can be added to the shopping cart. It is filled in after the element mounts and stays empty for an anonymous shopper.
+- **`guestCartHandle`**: `{ cartKey, cartToken }` of an anonymous shopper's guest cart, or undefined. The host can create the guest cart after the element mounts, so read it when needed.
+
+### Commerce
+
+`initializeContext` passes the context's guest cart handle to the action SDK beside the token retriever, and the SDK reads it on every cart call. The same `hx.addToCart`, `hx.getCart` and `hx.openCart(this.context.navigate)` calls then work for a signed-in user and for a guest on a public page; see the Commerce section of the `@halix/action-sdk` README. A guest can buy only objects whose `guestPurchaseAllowed` is true.
 
 ### HalixLitElement
 
