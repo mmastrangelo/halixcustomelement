@@ -226,6 +226,11 @@ export interface CustomElementContext {
     refreshPageData: () => Promise<void>;
     navigate: (componentId: string, queryParams?: { [key: string]: string }) => Observable<any>;
     authTokenRetriever: () => Observable<string>;
+    /**
+     * Executes an authenticated Action request through the browser host when its session is
+     * isolated from the page's same-origin cookie, such as in a Builder preview.
+     */
+    actionRequestExecutor?: (actionRef: string, body: unknown, timeoutMs: number) => Observable<unknown>;
     metadataLookup: MetadataLookup;
 
     /**
@@ -257,6 +262,7 @@ export function initializeContext(context: CustomElementContext, actionSdk: Acti
     actionSdk.initialize({
         body: {
             authTokenRetriever: context.authTokenRetriever,
+            actionRequestExecutor: context.actionRequestExecutor,
             sandboxKey: context.session?.sandbox?.objKey,
             serviceAddress: context.serviceAddress,
             actionSubject: context.pageContext.raw,
