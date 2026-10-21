@@ -85,6 +85,7 @@ The `CustomElementContext` interface provides access to the Halix platform state
 - **`authTokenRetriever`**: Function to get authentication tokens. On a public page with no signed-in user it returns no token.
 - **`commerce`**: `{ payableElementIds }`, the data elements whose objects can be added to the shopping cart. It is filled in after the element mounts and stays empty for an anonymous shopper.
 - **`guestCartHandle`**: `{ cartKey, cartToken }` of an anonymous shopper's guest cart, or undefined. The host can create the guest cart after the element mounts, so read it when needed.
+- **`ensureGuestCartHandle()`**: creates the anonymous shopper's guest cart on a public page, or returns the one the page holds. `initializeContext` passes it to the action SDK, whose `addToCart` calls it when the shopper has neither a session nor a guest cart. It rejects when a user is signed in or the page is not public.
 
 ### Commerce
 

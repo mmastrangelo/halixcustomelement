@@ -45,6 +45,16 @@ for (const sdk of [esmSdk, cjsSdk]) {
     assert.equal(initialized.body.guestCartHandle, undefined);
     handle = { cartKey: 'cart~guest', cartToken: 'token' };
     assert.deepEqual(initialized.body.guestCartHandle, handle, 'initializeContext must pass the live guest cart handle');
+    assert.equal(initialized.body.ensureGuestCartHandle, undefined, 'no create function when the host offers none');
+
+    // The host's guest cart creation reaches the Action SDK.
+    const created = { cartKey: 'cart~new', cartToken: 'new-token' };
+    sdk.initializeContext({
+        session: { sandbox: { objKey: 'sbx~guest' }, organizationKey: 'org~guest' },
+        pageContext: { raw: {} },
+        ensureGuestCartHandle: async () => created,
+    }, { initialize: (config) => { initialized = config; } });
+    assert.deepEqual(await initialized.body.ensureGuestCartHandle(), created, 'initializeContext must pass the host create function');
 }
 
 console.log('ESM and CommonJS package entrypoints resolve with the declared Action SDK.');

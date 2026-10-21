@@ -191,6 +191,12 @@ export interface CustomElementContext {
      * cart. Read it when needed rather than once: the host can create the guest cart after the element mounts.
      */
     readonly guestCartHandle?: GuestCartHandle;
+    /**
+     * Creates the anonymous shopper's guest cart on a public page, or returns the one the page holds. The action SDK's
+     * addToCart calls it when the shopper has neither a session nor a guest cart. It rejects when a user is signed in
+     * or the page is not public.
+     */
+    ensureGuestCartHandle?: () => Promise<GuestCartHandle>;
     readOnly: boolean;
     pageContext: CustomElementPageContext;
     pageContext$: Observable<CustomElementPageContext>;
@@ -296,6 +302,7 @@ export function initializeContext(context: CustomElementContext, actionSdk: Acti
             get guestCartHandle() {
                 return context.guestCartHandle;
             },
+            ensureGuestCartHandle: context.ensureGuestCartHandle ? () => context.ensureGuestCartHandle!() : undefined,
             sandboxKey: context.session?.sandbox?.objKey,
             serviceAddress: context.serviceAddress,
             actionSubject: context.pageContext.raw,
